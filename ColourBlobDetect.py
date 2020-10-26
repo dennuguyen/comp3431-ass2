@@ -26,6 +26,8 @@ def openImage(imagePath):
     Opens the image given its path using cv2
     """
     image = cv2.imread(imagePath, cv2.IMREAD_COLOR)
+    # if image == None:
+    #     raise FileNotFoundError
     return image
 
 def detectBlob(frame):
@@ -37,16 +39,16 @@ def detectBlob(frame):
     params.minThreshold = 10
     params.maxThreshold = 200
 
-    params.filterByArea = True
+    params.filterByArea = False
     params.minArea = 1500
 
     params.filterByCircularity = True
     params.minCircularity = 0.1
 
-    params.filterByConvexity = True
+    params.filterByConvexity = False
     params.minConvexity - 0.87
 
-    params.filterByInertia = True
+    params.filterByInertia = False
     params.minInertiaRatio = 0.01
 
     detector = cv2.SimpleBlobDetector_create(params)
@@ -54,12 +56,12 @@ def detectBlob(frame):
     image = cv2.drawKeypoints(frame,
                               keypoints,
                               np.array([]),
-                              (0,0,255),
+                              (0,0,50),
                               cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     cv2.imshow("Frame", image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    image = openImage("turtlebot3.jpg")
+    image = openImage("turtlebot.jpg")
     detectBlob(image)
