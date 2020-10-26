@@ -49,7 +49,7 @@ def detectBlob(frame):
     params.filterByInertia = True
     params.minInertiaRatio = 0.01
 
-    detector = cv2.SimpleBlobDetector(params)
+    detector = cv2.SimpleBlobDetector_create(params)
     keypoints = detector.detect(frame)
     image = cv2.drawKeypoints(frame,
                               keypoints,
