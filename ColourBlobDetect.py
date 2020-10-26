@@ -1,6 +1,4 @@
-"""
-Black colour blob detection using OpenCV
-"""
+#!/usr/bin/env python3
 
 import cv2
 import numpy as np
@@ -36,20 +34,23 @@ def detectBlob(frame):
     """
 
     params = cv2.SimpleBlobDetector_Params()
-    params.minThreshold = 10
+    params.minThreshold = 1
     params.maxThreshold = 200
 
-    params.filterByArea = False
-    params.minArea = 1500
+    params.filterByArea = True
+    params.minArea = 200
+    
+    param.sfilterByColor = True
+    params.blobColor = 0
 
-    params.filterByCircularity = True
+    params.filterByCircularity = False
     params.minCircularity = 0.1
 
     params.filterByConvexity = False
     params.minConvexity - 0.87
 
-    params.filterByInertia = False
-    params.minInertiaRatio = 0.01
+    params.filterByInertia = True
+    params.minInertiaRatio = 0.1
 
     detector = cv2.SimpleBlobDetector_create(params)
     keypoints = detector.detect(frame)
