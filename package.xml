@@ -33,9 +33,21 @@
     <depend>std_msgs</depend>
     <depend>sensor_msgs</depend>
     <depend>geometry_msgs</depend>
+<<<<<<< HEAD
     <depend>rviz</depend>
 
     <!--depend>cv_bridge</depend-->
+=======
+    <depend>image_transport</depend>
+    <!--depend>crosbot_msgs</depend-->
+    <!--depend>crosbot</depend-->
+    <depend>rviz</depend>
+
+    <!-- Add back if necessary -->
+    <!--depend>crosbot_explore</depend-->
+    <!--depend>cv_bridge</depend-->
+    <!--depend>crosbot_graphslam</depend-->
+>>>>>>> 37d6e9c2e5f523f6f7b11c0f49d4614aa5e3c983
 
     <!-- RViz Plugins -->
     <export>
