@@ -96,9 +96,9 @@ def detectBlob(frame, pub):
 
 
 if __name__ == "__main__":
-    ros_node_name = 'colour_blob_detect'  # ros node name
-    pub_topic = 'key_points'  # topic to publish to
-    sub_topic = 'raspicam_node/image/compressed'  # topic to subscribe to
+    ros_node_name = "colour_blob_detect"  # ros node name
+    pub_topic = "key_points"  # topic to publish to
+    sub_topic = "raspicam_node/image/compressed"  # topic to subscribe to
 
     rospy.init_node(ros_node_name)
     pub = rospy.Publisher(pub_topic, PoseArray)
