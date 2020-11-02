@@ -71,7 +71,7 @@ def detectBlob(frame, pub):
     keypoints = detector.detect(frame)
 
     # Draw the keypoints on an image
-    # image = cv2.drawKeypoints(frame, keypoints, np.array([]), (255, 0, 0),
+    # image = cv2.drawKeypoints(frame, keypoints, np.array([]), (0, 0, 255),
     #                           cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     # cv2.imshow("Frame", image)
     # cv2.waitKey(0)
@@ -85,9 +85,11 @@ def detectBlob(frame, pub):
     # Extract all coordinates from keypoints and put it into PoseArray
     for keypoint in keypoints:
         pose = Pose()
-        pose.position.x = keypoint.pt.x
-        pose.position.y = keypoint.pt.y
+        pose.position.x = keypoint.pt[0]
+        pose.position.y = keypoint.pt[1]
+        pose.position.z = keypoint.size
         poses.poses.append(pose)
+        # print("x: ", pose.position.x, "\ty: ", pose.position.y, "\tsize: ", pose.position.z)
 
     # Publish the PoseArray
     pub.publish(poses)
@@ -104,3 +106,4 @@ if __name__ == "__main__":
                            CompressedImage,
                            detectBlob,
                            queue_size=1)
+    detectBlob(openImage("turtlebot.jpg"), pub)
