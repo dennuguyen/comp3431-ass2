@@ -46,14 +46,15 @@ def detectBlob(frame, pub):
 
     # Filters by area
     params.filterByArea = True
-    params.minArea = 200
+    params.minArea = 1000
+    params.maxArea = 2000
 
     # Filters by colour
     params.filterByColor = True
-    params.blobColor = 0
+    params.blobColor = 255
 
     # Filter by roundness
-    params.filterByCircularity = False
+    params.filterByCircularity = True
     params.minCircularity = 0.1
 
     # Filter by convexity
@@ -61,18 +62,20 @@ def detectBlob(frame, pub):
     params.minConvexity - 0.87
 
     # Filter by inertia
-    params.filterByInertia = True
+    params.filterByInertia = False
     params.minInertiaRatio = 0.1
 
     # Create blob detector
     detector = cv2.SimpleBlobDetector_create(params)
 
     # Detect blobs in our frame returned as keypoints
-    keypoints = detector.detect(frame)
+    img = np.fromstring(frame.data, np.uint8)
+    img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+    keypoints = detector.detect(img)
 
     # Draw the keypoints on an image
     # image = cv2.drawKeypoints(frame, keypoints, np.array([]), (0, 0, 255),
-    #                           cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    #                          cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     # cv2.imshow("Frame", image)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
@@ -89,7 +92,7 @@ def detectBlob(frame, pub):
         pose.position.y = keypoint.pt[1]
         pose.position.z = keypoint.size
         poses.poses.append(pose)
-        # print("x: ", pose.position.x, "\ty: ", pose.position.y, "\tsize: ", pose.position.z)
+        print("x: ", pose.position.x, "\ty: ", pose.position.y, "\tsize: ", pose.position.z)
 
     # Publish the PoseArray
     pub.publish(poses)
@@ -101,9 +104,11 @@ if __name__ == "__main__":
     sub_topic = "raspicam_node/image/compressed"  # topic to subscribe to
 
     rospy.init_node(ros_node_name)
-    pub = rospy.Publisher(pub_topic, PoseArray)
+    pub = rospy.Publisher(pub_topic, PoseArray, queue_size=1)
     sub = rospy.Subscriber(sub_topic,
                            CompressedImage,
                            detectBlob,
+                           (pub),
                            queue_size=1)
-    detectBlob(openImage("turtlebot.jpg"), pub)
+    rospy.spin()
+   # detectBlob(openImage("turtlebot.jpg"), pub)
