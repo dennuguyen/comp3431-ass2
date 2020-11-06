@@ -1,0 +1,6 @@
+<launch>
+    <include file="$(find turtlebot3_gazebo)/launch/self_driving.launch"/>
+    <node pkg="ass2_test" name="test_cam" type="test_cam.py" output="screen"/>
+</launch>
+
+

@@ -1,0 +1,8 @@
+<launch>
+    <include file="$(find turtlebot3_gazebo)/launch/self_driving.launch"/>
+    <include file="$(find turtlebot3_slam)/launch/turtlebot3_slam.launch" >
+        <arg name="slam_methods" value="hector"/>
+    </include>
+    <node pkg="ass2_test" name="test_cam" type="test_map.py" output="screen"/>
+    <!-- <node pkg="ass2_test" name="test_cam" type="test_cam.py" output="screen"/> -->
+</launch>
