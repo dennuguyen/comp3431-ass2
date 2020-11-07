@@ -20,7 +20,12 @@ Subscribes\<CompressedImage>: "raspicam_node/image/compressed"
 ## "Wall Follow" example
 
 Run `roslaunch ass2_test test.launch`
-More details to come
+This node publishes two topics
+- /road_info : A uint32[] array that describes distances in the image.
+    see road_info.png for what each index represents
+- /lane/image/compressed : A mask representing the lane we're currently in.
+    Works well in the simulator, but needs improvements with the real thing,
+    since the dashed lines in the lab have much wider gaps
 
 ## Birds-eye view example
 
