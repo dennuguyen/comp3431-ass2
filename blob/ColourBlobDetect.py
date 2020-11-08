@@ -5,7 +5,8 @@ import numpy as np
 import rospy
 
 from sensor_msgs.msg import CompressedImage
-from ass2.msg import Blob
+from geometry_msgs.msg import Pose
+from geometry_msgs.msg import PoseArray
 
 
 def openCamera(self, parameter_list):
@@ -79,6 +80,11 @@ def detectBlob(frame, pub):
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
 
+    # Create the PoseArray
+    poses = PoseArray()
+    poses.header.frame_id = "/raspicam_node/image/compressed"
+    poses.header.stamp = rospy.Time.now()
+
     # Extract all coordinates from keypoints and put it into PoseArray
     for keypoint in keypoints:
         pose = Pose()
@@ -89,7 +95,7 @@ def detectBlob(frame, pub):
         print("x: ", pose.position.x, "\ty: ", pose.position.y, "\tsize: ", pose.position.z)
 
     # Publish the PoseArray
-    pub.publish(blobs)
+    pub.publish(poses)
 
 
 if __name__ == "__main__":
