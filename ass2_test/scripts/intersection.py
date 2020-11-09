@@ -18,22 +18,23 @@ direction = Direction.FORWARD
 moving = False
 blocked = False
 cyclesTurned = 0
+msg = Twist()
 
 def callback_road_info(data):
     # Five number array
     road_info_data = data.data
-    msg = Twist()
+    global msg
     global intersection_vel
     global direction
-    global moving 
+    global moving
     global blocked
-    global cyclesTurned 
+    global cyclesTurned
 
+    newMsg = Twist()
     if not moving and not blocked:
         #Not sure about the values
         #Not sure how to pick where to turn
         #Forward on long gap, left otherwise will manually complete the map
-
         if road_info_data[2] > 80:
             direction = Direction.FORWARD
         else:
@@ -41,21 +42,23 @@ def callback_road_info(data):
 
     if moving:
         if direction = Direction.FORWARD:
-            msg.linear.x = TURN_LINVEL
-            msg.angular.z = 0
+            newMsg.linear.x = TURN_LINVEL
+            newMsg.angular.z = 0
         elif direction = Direction.LEFT:
-            msg.linear.x = TURN_LINVEL
-            msg.angular.z = -TURN_ANGVEL
+            newMsg.linear.x = TURN_LINVEL
+            newMsg.angular.z = -TURN_ANGVEL
         elif direction = Direction.RIGHT:
-            msg.linear.x = TURN_LINVEL
-            msg.angular.z = -TURN_ANGVEL
+            newMsg.linear.x = TURN_LINVEL
+            newMsg.angular.z = -TURN_ANGVEL
 
         cyclesTurned += 1
         if cyclesTurned >= TURN_TOTAL_CYCLES:
             moving = False
             cyclesTurned = 0
 
-    intersection_vel.publish(msg)
+    if newMessage != msg:
+        intersection_vel.publish(msg)
+        msg = newMessage
 
 def callback_blocked(blocked):
     global blocked = blocked.data
