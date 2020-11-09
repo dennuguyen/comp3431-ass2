@@ -17,7 +17,7 @@ TURN_TOTAL_DEGREES = 90
 direction = Direction.FORWARD
 moving = False
 blocked = False
-degreesTurned = 0
+cyclesTurned = 0
 
 def callback_road_info(data):
     # Five number array
@@ -53,7 +53,7 @@ def callback_road_info(data):
         degreesTurned += 1
         if degreesTurned >= TURN_TOTAL_DEGREES:
             moving = False
-            degreesTurned = 0
+            cyclesTurned = 0
 
     intersection_vel.publish(msg)
 
@@ -64,11 +64,11 @@ def callback_interesection_detected(data)
     intersection_detected = data.data
     global moving
     global blocked
-    global degreesTurned
+    global cyclesTurned
 
     if intersection_detected and not moving:
         moving = True
-        degreesTurned = 0
+        cyclesTurned = 0
 
 if __name__ == '__main__':
     rospy.Subscriber('/road_info', RoadInfo, callback_road_info)
