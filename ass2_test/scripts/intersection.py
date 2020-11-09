@@ -12,7 +12,7 @@ class Direction(Enum):
 
 TURN_ANGVEL = 0.5
 TURN_LINVEL = 0.1
-TURN_TOTAL_DEGREES = 90
+TURN_TOTAL_CYCLES = 90
 
 direction = Direction.FORWARD
 moving = False
@@ -27,7 +27,7 @@ def callback_road_info(data):
     global direction
     global moving 
     global blocked
-    global degreesTurned
+    global cyclesTurned 
 
     if not moving and not blocked:
         #Not sure about the values
@@ -50,8 +50,8 @@ def callback_road_info(data):
             msg.linear.x = TURN_LINVEL
             msg.angular.z = -TURN_ANGVEL
 
-        degreesTurned += 1
-        if degreesTurned >= TURN_TOTAL_DEGREES:
+        cyclesTurned += 1
+        if cyclesTurned >= TURN_TOTAL_CYCLES:
             moving = False
             cyclesTurned = 0
 
