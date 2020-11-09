@@ -31,7 +31,7 @@ def callback_road_info(data):
     global cyclesTurned
 
     newMsg = Twist()
-    if not moving and not blocked:
+    if not moving:
         #Not sure about the values
         #Not sure how to pick where to turn
         #Forward on long gap, left otherwise will manually complete the map
@@ -40,7 +40,7 @@ def callback_road_info(data):
         else:
             direction = Direction.LEFT
 
-    if moving:
+    if moving and not blocked:
         if direction = Direction.FORWARD:
             newMsg.linear.x = TURN_LINVEL
             newMsg.angular.z = 0
@@ -56,9 +56,9 @@ def callback_road_info(data):
             moving = False
             cyclesTurned = 0
 
-    if newMessage != msg:
+    if newMsg != msg:
         intersection_vel.publish(msg)
-        msg = newMessage
+        msg = newMsg
 
 def callback_blocked(blocked):
     global blocked = blocked.data
