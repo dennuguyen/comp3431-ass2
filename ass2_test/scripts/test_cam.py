@@ -21,6 +21,28 @@ cmd_vel = None
 img_pub = None
 
 
+def solve_intersection(seg1, seg2):
+    '''Solves for the intersection of two line segments. A line segment is
+    defined as a numpy array of the form [x_start, y_start, x_end, y_end]'''
+    pt1 = seg1[0:2]
+    pt2 = seg1[2:4]
+
+    pt3 = seg2[0:2]
+    pt4 = seg2[2:4]
+
+    q = pt3
+    p = pt1
+    r = pt2 - pt1
+    s = pt4 - pt3
+
+    t = np.cross(q - p, s) / np.cross(r, s)
+    # u = np.cross(q - p, r) / np.cross(r, s)
+    v1 = np.cross(r, s)
+    v2 = np.cross(q - p, r)
+    
+    return p + t * r
+
+
 def rpi_callback(data):
     # Read into numpy
     img = np.fromstring(data.data, np.uint8)
@@ -65,14 +87,42 @@ def rpi_callback(data):
     tmp = dst[:, 240]
     data[2] = (1 - (tmp != 0)[::-1]).argmax()
 
-    # Publish the lane mask
-    msg = CompressedImage()
-    msg.header.stamp = rospy.Time.now()
-    msg.format = "jpeg"
-    msg.data = np.array(cv.imencode('.jpg', dst)[1]).tostring()
-    
-    global img_pub
-    img_pub.publish(msg)
+    # Compute the Hough Line transform
+    edges = cv.Canny(dst, 50, 200, None, 3)
+    linesP = cv.HoughLinesP(edges, 1, np.pi / 180, 50, None, 50, 10)
+    cdstP = np.copy(dst)
+
+    if linesP is not None:
+        # Get the index of downward sloped lines (note 1st quadrant coords are
+        # flipped)
+        linesP = linesP.astype(np.float32)
+        s = (linesP[:,:,3] - linesP[:,:,1]) / (linesP[:,:,2] - linesP[:,:,0])
+        ix = (s > 0)
+        linesP = linesP[ix]
+
+        # If the line segment begins and ends on the right side, it probably
+        # isn't the right lane marker
+        ix = (linesP[:, 2] > 320) & (linesP[:, 0] > 320)
+        linesP = linesP[ix]
+
+        # Define line segments for the left and right image borders
+        segr = np.int32([640, 0, 640, 1])
+        segl = np.int32([0, 0, 0, 1])
+        
+        for i in range(0, len(linesP)):
+            seg1 = linesP[i]
+
+            # Solve for where the line segment intersects the left and right
+            # edges of the image
+            tmpr = solve_intersection(seg1, segr)
+            tmpl = solve_intersection(seg1, segl)
+
+            # Mask everything above the line
+            pts = np.array([[0, 0], tmpl, tmpr, [640, 0]], dtype=np.int32)
+            cv.fillPoly(cdstP, [pts], (0, 0, 0), cv.LINE_AA)
+
+    # cv.imshow("Detected Lines (in red) - Probabilistic Line Transform", cdstP)
+    # cv.waitKey(1)
 
     # Publish the image distance info
     msg = RoadInfo()
@@ -81,6 +131,15 @@ def rpi_callback(data):
 
     global road_info
     road_info.publish(msg)
+
+    # Publish the lane mask
+    msg = CompressedImage()
+    msg.header.stamp = rospy.Time.now()
+    msg.format = "jpeg"
+    msg.data = np.array(cv.imencode('.jpg', cdstP)[1]).tostring()
+
+    global img_pub
+    img_pub.publish(msg)
 
     return
 
