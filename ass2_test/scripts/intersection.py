@@ -57,7 +57,7 @@ def callback_road_info(data):
             cyclesTurned = 0
 
     if newMsg != msg:
-        intersection_vel.publish(msg)
+        intersection_vel.publish(newMsg)
         msg = newMsg
 
 def callback_blocked(blocked):
