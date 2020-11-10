@@ -1,46 +1,47 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 
 import cv2
 import numpy as np
 import rospy
 
 from sensor_msgs.msg import CompressedImage
+from geometry_msgs.msg import Twist
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseArray
 
 
-def detectRed(frame):
+def detectRed(image):
     """
-    docstring
+    Detects regions of red and applies an inverted mask
     """
-    img = cv2.imread("ColorChecker.png")
-    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    # Convert from RGV to HSV
+    # img = cv2.imread("redstop.jpg", 1)  # Uncomment if opening a file path directly
+    img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    ## Gen lower mask (0-5) and upper mask (175-180) of RED
-    mask1 = cv2.inRange(img_hsv, (0, 50, 20), (5, 255, 255))
-    mask2 = cv2.inRange(img_hsv, (175, 50, 20), (180, 255, 255))
+    # Apply lower and upper masks for RED
+    lower = cv2.inRange(img, (0, 50, 50), (10, 255, 255))     # lower mask (0-5)
+    upper = cv2.inRange(img, (170, 50, 20), (180, 255, 255)) # upper mask (175-180)
 
-    ## Merge the mask and crop the red regions
-    mask = cv2.bitwise_or(mask1, mask2)
+    # Combine masks (subjects become white blobs on black background)
+    mask = cv2.bitwise_or(lower, upper)
+
+    # Invert image to detect black blobs
+    # mask = cv2.bitwise_not(mask)
+
+    # Merge mask and original image
     cropped = cv2.bitwise_and(img, img, mask=mask)
 
-    ## Display
-    cv2.imshow("mask", mask)
-    cv2.imshow("cropped", cropped)
-    cv2.waitKey()
+    # Convert back to RGB
+    cropped = cv2.cvtColor(cropped, cv2.COLOR_HSV2BGR)
+
+    # Display
+    # cv2.imshow("Red Mask", cropped)
+    # cv2.waitKey(0)
+
+    return mask
 
 
-def openImage(imagePath):
-    """
-    Opens the image given its path using cv2
-    """
-    image = cv2.imread(imagePath, cv2.IMREAD_COLOR)
-    # if image == None:
-    #     raise FileNotFoundError
-    return image
-
-
-def detectBlob(frame, pub):
+def detectBlob(frame):
     """
     Detect the blob
     """
@@ -50,16 +51,16 @@ def detectBlob(frame, pub):
     params.maxThreshold = 200
 
     # Filters by area
-    params.filterByArea = True
-    params.minArea = 1000
-    params.maxArea = 2000
+    params.filterByArea = False
+    params.minArea = 10
+    # params.maxArea = 2000
 
     # Filters by colour
     params.filterByColor = True
     params.blobColor = 255
 
     # Filter by roundness
-    params.filterByCircularity = True
+    params.filterByCircularity = False
     params.minCircularity = 0.1
 
     # Filter by convexity
@@ -73,15 +74,25 @@ def detectBlob(frame, pub):
     # Create blob detector
     detector = cv2.SimpleBlobDetector_create(params)
 
-    # Detect blobs in our frame returned as keypoints
+    # Open image
     img = np.fromstring(frame.data, np.uint8)
-    img = cv2.imdecode(img, cv2.IMREAD_COLOR)
-    keypoints = detector.detect(img)
+    img = cv2.imdecode(img, cv2.IMREAD_COLOR)   # decompress image
+
+    # Detect red regions
+    mask = detectRed(img)
+
+    # morphologically close the image
+    kernel = np.ones((5,5),np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+
+    # Detect blobs in our frame returned as keypoints
+    keypoints = detector.detect(mask)
 
     # Draw the keypoints on an image
-    # image = cv2.drawKeypoints(frame, keypoints, np.array([]), (0, 0, 255),
+    # mask = cv2.drawKeypoints(mask, keypoints, np.array([]), (0, 0, 255),
     #                          cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    # cv2.imshow("Frame", image)
+    # cv2.imshow("stop sign", mask)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
 
@@ -95,14 +106,19 @@ def detectBlob(frame, pub):
         pose = Pose()
         pose.position.x = keypoint.pt[0]
         pose.position.y = keypoint.pt[1]
-        pose.position.z = keypoint.size
-        poses.poses.append(pose)
-        print("x: ", pose.position.x, "\ty: ", pose.position.y, "\tsize: ",
+        # pose.position.z = keypoint.size
+	pose.position.z = 0        
+	poses.poses.append(pose)
+	
+	# if stop sign is detected, pose.position.z is set to 1
+	if keypoint.size > 50 and keypoint.pt[1] < 200 and keypoint.pt[0] < 550 and keypoint.pt[0] > 200:
+	    pose.position.z = 1
+        print("x: ", pose.position.x, "y: ", pose.position.y, "stop: ",
               pose.position.z)
 
-    # Publish the PoseArray
+    # Publish the topics
     pub.publish(poses)
-
+    
 
 if __name__ == "__main__":
     ros_node_name = "colour_blob_detect"  # ros node name
@@ -111,9 +127,11 @@ if __name__ == "__main__":
 
     rospy.init_node(ros_node_name)
     pub = rospy.Publisher(pub_topic, PoseArray, queue_size=1)
+    rospy.Subscriber('/camera/rgb/image_raw/compressed', CompressedImage, detectBlob)
     sub = rospy.Subscriber(sub_topic,
                            CompressedImage,
                            detectBlob, (pub),
                            queue_size=1)
     rospy.spin()
-# detectBlob(openImage("turtlebot.jpg"), pub)
+    # image = cv2.imread("redstop.jpg", cv2.IMREAD_COLOR)
+    # detectBlob(image, pub)
