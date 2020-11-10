@@ -9,20 +9,25 @@ from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseArray
 
 
-def openCamera(self, parameter_list):
+def detectRed(frame):
     """
     docstring
     """
-    try:
-        imgStream = cv2.VideoCapture(-1)
-        if not (imgStream.isOpened()):
-            print("Can't open camera")
-        while cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-        imgStream.release()
-        cv2.destroyAllWindows()
-    except:
-        pass
+    img = cv2.imread("ColorChecker.png")
+    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    ## Gen lower mask (0-5) and upper mask (175-180) of RED
+    mask1 = cv2.inRange(img_hsv, (0, 50, 20), (5, 255, 255))
+    mask2 = cv2.inRange(img_hsv, (175, 50, 20), (180, 255, 255))
+
+    ## Merge the mask and crop the red regions
+    mask = cv2.bitwise_or(mask1, mask2)
+    cropped = cv2.bitwise_and(img, img, mask=mask)
+
+    ## Display
+    cv2.imshow("mask", mask)
+    cv2.imshow("cropped", cropped)
+    cv2.waitKey()
 
 
 def openImage(imagePath):
@@ -92,7 +97,8 @@ def detectBlob(frame, pub):
         pose.position.y = keypoint.pt[1]
         pose.position.z = keypoint.size
         poses.poses.append(pose)
-        print("x: ", pose.position.x, "\ty: ", pose.position.y, "\tsize: ", pose.position.z)
+        print("x: ", pose.position.x, "\ty: ", pose.position.y, "\tsize: ",
+              pose.position.z)
 
     # Publish the PoseArray
     pub.publish(poses)
@@ -107,8 +113,7 @@ if __name__ == "__main__":
     pub = rospy.Publisher(pub_topic, PoseArray, queue_size=1)
     sub = rospy.Subscriber(sub_topic,
                            CompressedImage,
-                           detectBlob,
-                           (pub),
+                           detectBlob, (pub),
                            queue_size=1)
     rospy.spin()
-   # detectBlob(openImage("turtlebot.jpg"), pub)
+# detectBlob(openImage("turtlebot.jpg"), pub)
