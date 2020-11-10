@@ -76,7 +76,6 @@ def detectBlob(frame, pub):
     # Open image
     img = np.fromstring(frame.data, np.uint8)
     img = cv2.imdecode(img, cv2.IMREAD_COLOR)   # decompress image
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)  # convert to HSV
 
     # Detect red regions
     img = detectRed(img)
