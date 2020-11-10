@@ -9,12 +9,13 @@ from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseArray
 
 
-def detectRed(frame):
+def detectRed(image):
     """
     docstring
     """
-    img = cv2.imread(frame)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV) # hsv image
+    # Convert from RGV to HSV
+    # img = cv2.imread(image)  # Uncomment if opening a file path directly
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # Apply lower and upper masks for RED
     lower = cv2.inRange(img, (0, 50, 20), (5, 255, 255))     # lower mask (0-5)
@@ -26,8 +27,14 @@ def detectRed(frame):
     # Invert image to detect black blobs
     mask = cv2.bitwise_not(mask)
 
+    # Merge mask and original image
+    cropped = cv2.bitwise_and(img, img, mask=mask)
+
+    # Convert back to RGB
+    cropped = cv2.cvtColor(cropped, cv2.COLOR_HSV2BGR)
+
     # Display
-    # cv2.imshow("Red Mask", mask)
+    # cv2.imshow("Red Mask", cropped)
     # cv2.waitKey()
 
     return mask
@@ -70,8 +77,8 @@ def detectBlob(frame, pub):
     img = np.fromstring(frame.data, np.uint8)
     img = cv2.imdecode(img, cv2.IMREAD_COLOR)
 
-    # Detect red and overlap image with detected red regions
-    img = cv2.bitwise_or(img, detectRed(frame))
+    # Detect red regions
+    img = detectRed(img)
 
     # Detect blobs in our frame returned as keypoints
     keypoints = detector.detect(img)
@@ -114,5 +121,3 @@ if __name__ == "__main__":
                            detectBlob, (pub),
                            queue_size=1)
     rospy.spin()
-    
-    # detectRed("stop.png")
