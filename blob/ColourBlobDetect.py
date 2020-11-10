@@ -5,6 +5,7 @@ import numpy as np
 import rospy
 
 from sensor_msgs.msg import CompressedImage
+from geometry_msgs.msg import Twist
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseArray
 
@@ -14,8 +15,8 @@ def detectRed(image):
     Detects regions of red and applies an inverted mask
     """
     # Convert from RGV to HSV
-    img = cv2.imread("redstop.jpg", 1)  # Uncomment if opening a file path directly
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    # img = cv2.imread("redstop.jpg", 1)  # Uncomment if opening a file path directly
+    img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # Apply lower and upper masks for RED
     lower = cv2.inRange(img, (0, 50, 50), (10, 255, 255))     # lower mask (0-5)
@@ -40,7 +41,7 @@ def detectRed(image):
     return mask
 
 
-def detectBlob(frame, pub):
+def detectBlob(frame):
     """
     Detect the blob
     """
@@ -89,11 +90,11 @@ def detectBlob(frame, pub):
     keypoints = detector.detect(mask)
 
     # Draw the keypoints on an image
-    mask = cv2.drawKeypoints(mask, keypoints, np.array([]), (0, 0, 255),
-                              cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    cv2.imshow("stop sign", mask)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # mask = cv2.drawKeypoints(mask, keypoints, np.array([]), (0, 0, 255),
+    #                          cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    # cv2.imshow("stop sign", mask)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     # Create the PoseArray
     poses = PoseArray()
@@ -108,14 +109,16 @@ def detectBlob(frame, pub):
         # pose.position.z = keypoint.size
 	pose.position.z = 0        
 	poses.poses.append(pose)
-	if keypoint.size > 100 and keypoint.pt[1] < 300 and keypoint.pt[0] < 500 and keypoint.pt[0] > 200:
+	
+	# if stop sign is detected, pose.position.z is set to 1
+	if keypoint.size > 50 and keypoint.pt[1] < 200 and keypoint.pt[0] < 550 and keypoint.pt[0] > 200:
 	    pose.position.z = 1
         print("x: ", pose.position.x, "y: ", pose.position.y, "stop: ",
               pose.position.z)
 
     # Publish the topics
     pub.publish(poses)
-
+    
 
 if __name__ == "__main__":
     ros_node_name = "colour_blob_detect"  # ros node name
@@ -124,10 +127,11 @@ if __name__ == "__main__":
 
     rospy.init_node(ros_node_name)
     pub = rospy.Publisher(pub_topic, PoseArray, queue_size=1)
+    rospy.Subscriber('/camera/rgb/image_raw/compressed', CompressedImage, detectBlob)
     sub = rospy.Subscriber(sub_topic,
                            CompressedImage,
                            detectBlob, (pub),
                            queue_size=1)
     rospy.spin()
-    image = cv2.imread("redstop.jpg", cv2.IMREAD_COLOR)
-    detectBlob(image, pub)
+    # image = cv2.imread("redstop.jpg", cv2.IMREAD_COLOR)
+    # detectBlob(image, pub)
