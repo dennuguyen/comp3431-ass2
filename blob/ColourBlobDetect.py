@@ -13,31 +13,24 @@ def detectRed(frame):
     """
     docstring
     """
-    img = cv2.imread("ColorChecker.png")
-    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    img = cv2.imread(frame)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV) # hsv image
 
-    ## Gen lower mask (0-5) and upper mask (175-180) of RED
-    mask1 = cv2.inRange(img_hsv, (0, 50, 20), (5, 255, 255))
-    mask2 = cv2.inRange(img_hsv, (175, 50, 20), (180, 255, 255))
+    # Apply lower and upper masks for RED
+    lower = cv2.inRange(img, (0, 50, 20), (5, 255, 255))     # lower mask (0-5)
+    upper = cv2.inRange(img, (175, 50, 20), (180, 255, 255)) # upper mask (175-180)
 
-    ## Merge the mask and crop the red regions
-    mask = cv2.bitwise_or(mask1, mask2)
-    cropped = cv2.bitwise_and(img, img, mask=mask)
+    # Combine masks (subjects become white blobs on black background)
+    mask = cv2.bitwise_or(lower, upper)
 
-    ## Display
-    cv2.imshow("mask", mask)
-    cv2.imshow("cropped", cropped)
-    cv2.waitKey()
+    # Invert image to detect black blobs
+    mask = cv2.bitwise_not(mask)
 
+    # Display
+    # cv2.imshow("Red Mask", mask)
+    # cv2.waitKey()
 
-def openImage(imagePath):
-    """
-    Opens the image given its path using cv2
-    """
-    image = cv2.imread(imagePath, cv2.IMREAD_COLOR)
-    # if image == None:
-    #     raise FileNotFoundError
-    return image
+    return mask
 
 
 def detectBlob(frame, pub):
@@ -73,9 +66,14 @@ def detectBlob(frame, pub):
     # Create blob detector
     detector = cv2.SimpleBlobDetector_create(params)
 
-    # Detect blobs in our frame returned as keypoints
+    # Open image
     img = np.fromstring(frame.data, np.uint8)
     img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+
+    # Detect red and overlap image with detected red regions
+    img = cv2.bitwise_or(img, detectRed(frame))
+
+    # Detect blobs in our frame returned as keypoints
     keypoints = detector.detect(img)
 
     # Draw the keypoints on an image
@@ -116,4 +114,5 @@ if __name__ == "__main__":
                            detectBlob, (pub),
                            queue_size=1)
     rospy.spin()
-# detectBlob(openImage("turtlebot.jpg"), pub)
+    
+    # detectRed("stop.png")
