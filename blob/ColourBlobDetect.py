@@ -9,13 +9,10 @@ from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseArray
 
 
-def detectRed(frame):
+def detectRed(image):
     """
-    docstring
+    Detects regions of red and applies an inverted mask
     """
-    img = cv2.imread(frame)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV) # hsv image
-
     # Apply lower and upper masks for RED
     lower = cv2.inRange(img, (0, 50, 20), (5, 255, 255))     # lower mask (0-5)
     upper = cv2.inRange(img, (175, 50, 20), (180, 255, 255)) # upper mask (175-180)
@@ -68,10 +65,11 @@ def detectBlob(frame, pub):
 
     # Open image
     img = np.fromstring(frame.data, np.uint8)
-    img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+    img = cv2.imdecode(img, cv2.IMREAD_COLOR)   # decompress image
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)  # convert to HSV
 
     # Detect red and overlap image with detected red regions
-    img = cv2.bitwise_or(img, detectRed(frame))
+    img = cv2.bitwise_or(img, detectRed(img))
 
     # Detect blobs in our frame returned as keypoints
     keypoints = detector.detect(img)
