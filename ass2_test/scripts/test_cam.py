@@ -36,11 +36,15 @@ def solve_intersection(seg1, seg2):
     s = pt4 - pt3
 
     t = np.cross(q - p, s) / np.cross(r, s)
-    # u = np.cross(q - p, r) / np.cross(r, s)
-    v1 = np.cross(r, s)
-    v2 = np.cross(q - p, r)
     
     return p + t * r
+
+
+'''
+TODO:
+- Filter out white regions, then perform a logical not with dst
+    before performing and ya
+'''
 
 
 def rpi_callback(data):
@@ -84,7 +88,7 @@ def rpi_callback(data):
     data[3] = (tmp != 0)[::-1].argmax()
 
     # The length of the lane, checking lane pixels in the middle
-    tmp = dst[:, 240]
+    tmp = dst[:, 320]
     data[2] = (1 - (tmp != 0)[::-1]).argmax()
 
     # Compute the Hough Line transform
@@ -142,24 +146,6 @@ def rpi_callback(data):
     img_pub.publish(msg)
 
     return
-
-    ##################################################################
-    msg = Twist()
-
-    # Go full speed if at least 80 pixels of lane length remaining
-    if m_u < 80:
-        msg.linear.x = 0.16 * m_u / 190
-    else:
-        msg.linear.x = 0.16
-
-    # Turn if left and right line markers are imbalanced
-    if l_u - r_u < 0:
-        msg.angular.z = -0.1
-    elif l_u - r_u > 0:
-        msg.angular.z = 0.1
-
-    global cmd_vel
-    cmd_vel.publish(msg)
 
     
 def main():
