@@ -1,12 +1,14 @@
 #!/usr/bin/env python
-
 import rospy
 from sensor_msgs.msg import CompressedImage
 from geometry_msgs.msg import Twist
 from ass2_test.msg import RoadInfo
+from std_msgs.msg import Bool
 
 MAX_SPEED = 0.26
 MAX_TURN = 1.0
+
+
 
 def callback_road_info(data):
     # TODO: Perform a NOT color mask for the color of the lane markers
@@ -21,8 +23,6 @@ def callback_road_info(data):
 
     turn = 0.0
     drive = 0.0
-
-    msg = Twist()
 
     # Turning must scale positively with higher [0] and negatively
     # with higher [1].
@@ -43,6 +43,10 @@ def callback_road_info(data):
         #   lane and using that as a metric for how much road there is left
         
         # TODO: If these values are equal, we are probably at an intersection
+        if abs(road_info_data[0] - road_info_data[4]) > 5:
+            intersection_flag = 1
+        else:
+            intersection_flag = 0
         # TODO: Intersection handler goes here
         #   Keep logic simple. i.e., move forward for x seconds to clear
         #   the line if no stop sign is detected
@@ -51,21 +55,90 @@ def callback_road_info(data):
         # TODO: Keep turning even when both values are equal
         turn = (road_info_data[0] - road_info_data[4]) / 60.0
 
-    msg.linear.x = drive * MAX_SPEED
-    msg.angular.z = turn * MAX_TURN
-
     # TODO: Zero out linear movement if another turtlebot is detected
+
+def callback_stop_detection(data):
+    # Five number array
+    stop_data = data.data
     
-    global cmd_vel
-    cmd_vel.publish(msg)
+    if (data.data == 0):
+        stop_flag = 0
+    else:
+        stop_flag = 1
+
+def callback_intersection_vel(data):
+    # Five number array
+    road_info_data = data.data
+    global msg
+    global intersection_vel
+    global direction
+    global moving
+    global blocked
+    global cyclesTurned
+
+    newMsg = Twist()
+    if not moving:
+        #Not sure about the values
+        #Not sure how to pick where to turn
+        #Forward on long gap, left otherwise will manually complete the map
+        if road_info_data[2] > 80:
+            direction = Direction.FORWARD
+        else:
+            direction = Direction.LEFT
+
+    if moving and not blocked:
+        if direction = Direction.FORWARD:
+            newMsg.linear.x = TURN_LINVEL
+            newMsg.angular.z = 0
+        elif direction = Direction.LEFT:
+            newMsg.linear.x = TURN_LINVEL
+            newMsg.angular.z = -TURN_ANGVEL
+        elif direction = Direction.RIGHT:
+            newMsg.linear.x = TURN_LINVEL
+            newMsg.angular.z = -TURN_ANGVEL
+
+        cyclesTurned += 1
+        if cyclesTurned >= TURN_TOTAL_CYCLES:
+            moving = False
+            cyclesTurned = 0
+
+    if newMsg != msg:
+        pub.publish(newMsg)
+        msg = newMsg
+
+def main_ass2():
+    global stop_flag
+    stop_flag = 0
+    global intersection_flag
+    intersection_flag = 0
+
+    rospy.init_node("ass2_cpu", anonymous=True)
+    rospy.Subscriber('/key_points', Bool, callback_stop_detection)
+    if (stop_flag == 0):
+        # We've definitely been told to stop due to something.
+        msg.linear.x = 0
+        msg.angular.z = 0
+    else:
+        # Otherwise, check whether we are at an intersection or not?
+        rospy.Subscriber('/road_info', RoadInfo, callback_road_info)
+        if (intersection_flag == 1):
+            rospy.Subscriber('/intersection_vel', Twist, callback_intersection_vel) # CALL JOSH INTERSECTION HANDLER
+            rospy.Subscriber('/road_info', RoadInfo, callback_road_info)
+
+    rospy.spin()
+    pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
+    while not rospy.is_shutdown():
+        print("publishing")
+        pub.publish(msg)
+        r.sleep()
 
 if __name__ == '__main__':
-    rospy.Subscriber('/road_info', RoadInfo, callback_road_info)
+    global msg
+    msg = Twist()
+    global r 
+    r = rospy.Rate(10)
 
-    global cmd_vel
-    cmd_vel = rospy.Publisher('cmd_vel', Twist, queue_size=1)
-
-    rospy.init_node('ass2_cpu', anonymous=True)
-
-    rospy.sleep(10.0)
-    rospy.spin()
+    try:
+            main_ass2()
+    except rospy.ROSInterruptException:
+            rospy.loginfo("node is shut down.")
