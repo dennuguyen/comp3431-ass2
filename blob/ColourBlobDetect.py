@@ -9,7 +9,7 @@ from std_msgs.msg import Bool
 
 def applyMask(image):
     """
-    Detects regions of red and applies an inverted mask
+    Detects regions of red and black and applies an inverted mask
     """
     # Convert from RGV to HSV
     # image = cv2.imread(image, 1)  # Uncomment if opening a file path directly
@@ -91,22 +91,21 @@ def detectBlob(image, pub):
     keypoints = detector.detect(image)
 
     # Draw the keypoints on an image
-    image = cv2.drawKeypoints(image, keypoints, np.array([]), (0, 0, 255),
-                             cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    cv2.imshow("Keypoints Image", image)
-    if cv2.waitKey(0) == ord('q'):
-        cv2.destroyAllWindows()
+    # image = cv2.drawKeypoints(image, keypoints, np.array([]), (0, 0, 255),
+    #                          cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    # cv2.imshow("Keypoints Image", image)
+    # if cv2.waitKey(0) == ord('q'):
+    #     cv2.destroyAllWindows()
 
-    # Create the PoseArray
+    # Stopped flag to publish is false
     stopped = Bool()
     stopped.data = False
 
-    # # Extract all coordinates from keypoints and put it into PoseArray
+    # Check all keypoints if stop sign or turtlebot is in image
     for keypoint in keypoints:
-        # If stop sign is detected, set stopped to true
+        print("x: ", keypoint.pt[0], "y: ", keypoint.pt[1], "stop: ", stopped)
         if keypoint.size > 50 and keypoint.pt[1] < 200 and keypoint.pt[0] < 550 and keypoint.pt[0] > 200:
             stopped = True
-            print("x: ", keypoint.pt[0], "y: ", keypoint.pt[1], "stop: ", stopped)
             break
 
     # Publish the topics
