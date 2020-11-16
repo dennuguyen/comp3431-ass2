@@ -60,10 +60,10 @@ def callback_stop_detection(data):
     # Five number array
     stop_data = data.data
     
-    if (data.data == 0):
-        stop_flag = 0
-    else:
+    if (data.data == 1):
         stop_flag = 1
+    else:
+        stop_flag = 0
 
 def callback_intersection_vel(data):
     # Five number array
@@ -113,7 +113,7 @@ def main_ass2():
 
     rospy.init_node("ass2_cpu", anonymous=True)
     rospy.Subscriber('/key_points', Bool, callback_stop_detection)
-    if (stop_flag == 0):
+    if (stop_flag == 1):
         # We've definitely been told to stop due to something.
         msg.linear.x = 0
         msg.angular.z = 0
