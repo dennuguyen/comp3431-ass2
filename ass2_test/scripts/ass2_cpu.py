@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-import rospy
+import rospy, time
 from sensor_msgs.msg import CompressedImage
 from geometry_msgs.msg import Twist
 from ass2_test.msg import RoadInfo
@@ -122,7 +121,9 @@ def main_ass2():
         # Otherwise, check whether we are at an intersection or not?
         rospy.Subscriber('/road_info', RoadInfo, callback_road_info)
         if (intersection_flag == 1):
-            rospy.Subscriber('/intersection_vel', Twist, callback_intersection_vel) # CALL JOSH INTERSECTION HANDLER
+            pub_intersection_detected = rospy.Publisher('intersection_detected', Twist, queue_size=1)
+            pub_intersection_detected.publish(msg)
+            time.sleep(30)
             rospy.Subscriber('/road_info', RoadInfo, callback_road_info)
 
     rospy.spin()
