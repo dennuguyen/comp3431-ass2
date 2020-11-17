@@ -5,6 +5,7 @@ from sensor_msgs.msg import CompressedImage
 from geometry_msgs.msg import Twist
 from ass2_test.msg import RoadInfo
 from std_msgs.msg import Bool
+from enum import Enum
 
 MAX_SPEED = 0.26
 MAX_TURN = 1.0

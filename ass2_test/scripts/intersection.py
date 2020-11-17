@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import rospy
 
 from std_msgs.msg import Bool
@@ -41,13 +42,13 @@ def callback_road_info(data):
             direction = Direction.LEFT
 
     if moving and not blocked:
-        if direction = Direction.FORWARD:
+        if direction == Direction.FORWARD:
             newMsg.linear.x = TURN_LINVEL
             newMsg.angular.z = 0
-        elif direction = Direction.LEFT:
+        elif direction == Direction.LEFT:
             newMsg.linear.x = TURN_LINVEL
             newMsg.angular.z = -TURN_ANGVEL
-        elif direction = Direction.RIGHT:
+        elif direction == Direction.RIGHT:
             newMsg.linear.x = TURN_LINVEL
             newMsg.angular.z = -TURN_ANGVEL
 
@@ -60,10 +61,11 @@ def callback_road_info(data):
         intersection_vel.publish(newMsg)
         msg = newMsg
 
-def callback_blocked(blocked):
-    global blocked = blocked.data
+def callback_blocked(data):
+    global blocked 
+    blocked = data.data
 
-def callback_interesection_detected(data)
+def callback_interesection_detected(data):
     intersection_detected = data.data
     global moving
     global blocked
