@@ -9,6 +9,8 @@ from scipy import stats
 from sensor_msgs.msg import CompressedImage
 from geometry_msgs.msg import Twist
 
+import datetime
+
 '''
 NOTE: Camera position relative to:
 base_footprint : 0.076 0.000 0.103
@@ -48,6 +50,11 @@ TODO:
 
 
 def rpi_callback(data):
+    recv_time = datetime.datetime.fromtimestamp(data.header.stamp.to_time())
+    curr_time = datetime.datetime.now()
+
+    print(curr_time - recv_time)
+    
     # Read into numpy
     img = np.fromstring(data.data, np.uint8)
     
