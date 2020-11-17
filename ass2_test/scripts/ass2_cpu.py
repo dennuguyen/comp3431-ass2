@@ -14,6 +14,8 @@ TURN_ANGVEL = 0.5
 TURN_LINVEL = 0.1
 TURN_TOTAL_CYCLES = 90
 
+at_intersection = False
+cycles_turned = 0
 class Direction(Enum):
     LEFT = 1
     FORWARD = 2
@@ -28,6 +30,9 @@ direction = Direction.FORWARD
 def callback_road_info(data):
     global moving
     global blocked
+    global at_intersection
+    global direction
+    global cycles_turned 
     # TODO: Perform a NOT color mask for the color of the lane markers
     #   before doing visual processing
     # OPTIONAL TODO: Perform a color mask for the color of the road
@@ -64,7 +69,7 @@ def callback_road_info(data):
             at_intersection = True
         else:
             at_intersection = False
-        print(at_intersection)
+        print("ATINT: ", at_intersection)
 
     if not moving and at_intersection:
         #Not sure about the values
@@ -75,6 +80,7 @@ def callback_road_info(data):
         else:
             direction = Direction.LEFT
         moving = True
+        print("MOVING is true")
 
     global msg
     if moving and not blocked:
@@ -93,6 +99,7 @@ def callback_road_info(data):
             moving = False
             cyclesTurned = 0
     else:
+        print("Definitely in here!")
         # TODO: Intersection handler goes here
         #   Keep logic simple. i.e., move forward for x seconds to clear
         #   the line if no stop sign is detected

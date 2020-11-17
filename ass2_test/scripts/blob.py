@@ -76,7 +76,7 @@ def detectBlob(image, pub):
     detector = cv2.SimpleBlobDetector_create(params)
 
     # Open image
-    image = np.fromstring(frame.data, np.uint8)
+    image = np.fromstring(image.data, np.uint8)
     image = cv2.imdecode(image, cv2.IMREAD_COLOR)  # decompress image
 
     # Detect colour regions
@@ -103,9 +103,10 @@ def detectBlob(image, pub):
 
     # Check all keypoints if stop sign or turtlebot is in image
     for keypoint in keypoints:
-        print("x: ", keypoint.pt[0], "y: ", keypoint.pt[1], "stop: ", stopped)
-        if keypoint.size > 50 and keypoint.pt[1] < 200 and keypoint.pt[0] < 550 and keypoint.pt[0] > 200:
+        
+        if keypoint.size > 0 and keypoint.pt[1] < 200 and keypoint.pt[0] < 550 and keypoint.pt[0] > 200:
             stopped = True
+            print("x: ", keypoint.pt[0], "y: ", keypoint.pt[1], "stop: ", stopped)
             break
 
     # Publish the topics

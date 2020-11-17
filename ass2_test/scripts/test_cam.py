@@ -50,10 +50,10 @@ TODO:
 
 
 def rpi_callback(data):
-    recv_time = datetime.datetime.fromtimestamp(data.header.stamp.to_time())
-    curr_time = datetime.datetime.now()
+    # recv_time = datetime.datetime.fromtimestamp(data.header.stamp.to_time())
+    # curr_time = datetime.datetime.now()
 
-    print(curr_time - recv_time)
+    # print(curr_time - recv_time)
     
     # Read into numpy
     img = np.fromstring(data.data, np.uint8)
