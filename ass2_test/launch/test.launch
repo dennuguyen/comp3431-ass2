@@ -1,5 +1,5 @@
 <launch>
-    <include file="$(find turtlebot3_gazebo)/launch/self_driving.launch"/>
+    <!-- <include file="$(find turtlebot3_gazebo)/launch/self_driving.launch"/> -->
     <node pkg="ass2_test" name="test_cam" type="test_cam.py" output="screen"/>
     <node pkg="ass2_test" name="ass2_cpu" type="ass2_cpu.py" output="screen"/>
 </launch>

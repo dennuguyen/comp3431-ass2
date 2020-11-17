@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import rospy, time
 from sensor_msgs.msg import CompressedImage
 from geometry_msgs.msg import Twist
@@ -7,7 +9,8 @@ from std_msgs.msg import Bool
 MAX_SPEED = 0.26
 MAX_TURN = 1.0
 
-
+msg = None
+pub = None
 
 def callback_road_info(data):
     # TODO: Perform a NOT color mask for the color of the lane markers
@@ -42,10 +45,12 @@ def callback_road_info(data):
         #   lane and using that as a metric for how much road there is left
         
         # TODO: If these values are equal, we are probably at an intersection
-        if abs(road_info_data[0] - road_info_data[4]) > 5:
+        if abs(road_info_data[0] - road_info_data[4]) < 5:
             intersection_flag = 1
         else:
             intersection_flag = 0
+
+        print(intersection_flag)
         # TODO: Intersection handler goes here
         #   Keep logic simple. i.e., move forward for x seconds to clear
         #   the line if no stop sign is detected
@@ -55,89 +60,99 @@ def callback_road_info(data):
         turn = (road_info_data[0] - road_info_data[4]) / 60.0
 
     # TODO: Zero out linear movement if another turtlebot is detected
-
-def callback_stop_detection(data):
-    # Five number array
-    stop_data = data.data
-    
-    if (data.data == 1):
-        stop_flag = 1
-    else:
-        stop_flag = 0
-
-def callback_intersection_vel(data):
-    # Five number array
-    road_info_data = data.data
     global msg
-    global intersection_vel
-    global direction
-    global moving
-    global blocked
-    global cyclesTurned
+    msg.linear.x = drive * MAX_SPEED
+    msg.angular.z = turn * MAX_TURN
 
-    newMsg = Twist()
-    if not moving:
-        #Not sure about the values
-        #Not sure how to pick where to turn
-        #Forward on long gap, left otherwise will manually complete the map
-        if road_info_data[2] > 80:
-            direction = Direction.FORWARD
-        else:
-            direction = Direction.LEFT
+    global pub
+    pub.publish(msg)
 
-    if moving and not blocked:
-        if direction = Direction.FORWARD:
-            newMsg.linear.x = TURN_LINVEL
-            newMsg.angular.z = 0
-        elif direction = Direction.LEFT:
-            newMsg.linear.x = TURN_LINVEL
-            newMsg.angular.z = -TURN_ANGVEL
-        elif direction = Direction.RIGHT:
-            newMsg.linear.x = TURN_LINVEL
-            newMsg.angular.z = -TURN_ANGVEL
-
-        cyclesTurned += 1
-        if cyclesTurned >= TURN_TOTAL_CYCLES:
-            moving = False
-            cyclesTurned = 0
-
-    if newMsg != msg:
-        pub.publish(newMsg)
-        msg = newMsg
+# def callback_stop_detection(data):
+#     # Five number array
+#     stop_data = data.data
+# 
+#     if (data.data == 1):
+#         stop_flag = 1
+#     else:
+#         stop_flag = 0
+# 
+# def callback_intersection_vel(data):
+#     # Five number array
+#     road_info_data = data.data
+#     global msg
+#     global intersection_vel
+#     global direction
+#     global moving
+#     global blocked
+#     global cyclesTurned
+# 
+#     newMsg = Twist()
+#     if not moving:
+#         #Not sure about the values
+#         #Not sure how to pick where to turn
+#         #Forward on long gap, left otherwise will manually complete the map
+#         if road_info_data[2] > 80:
+#             direction = Direction.FORWARD
+#         else:
+#             direction = Direction.LEFT
+# 
+#     if moving and not blocked:
+#         if direction == Direction.FORWARD:
+#             newMsg.linear.x = TURN_LINVEL
+#             newMsg.angular.z = 0
+#         elif direction == Direction.LEFT:
+#             newMsg.linear.x = TURN_LINVEL
+#             newMsg.angular.z = -TURN_ANGVEL
+#         elif direction == Direction.RIGHT:
+#             newMsg.linear.x = TURN_LINVEL
+#             newMsg.angular.z = -TURN_ANGVEL
+# 
+#         cyclesTurned += 1
+#         if cyclesTurned >= TURN_TOTAL_CYCLES:
+#             moving = False
+#             cyclesTurned = 0
+# 
+#     if newMsg != msg:
+#         pub.publish(newMsg)
+#         msg = newMsg
 
 def main_ass2():
     global stop_flag
     stop_flag = 0
+
     global intersection_flag
     intersection_flag = 0
 
     rospy.init_node("ass2_cpu", anonymous=True)
-    rospy.Subscriber('/key_points', Bool, callback_stop_detection)
-    if (stop_flag == 1):
-        # We've definitely been told to stop due to something.
-        msg.linear.x = 0
-        msg.angular.z = 0
-    else:
-        # Otherwise, check whether we are at an intersection or not?
-        rospy.Subscriber('/road_info', RoadInfo, callback_road_info)
-        if (intersection_flag == 1):
-            pub_intersection_detected = rospy.Publisher('intersection_detected', Twist, queue_size=1)
-            pub_intersection_detected.publish(msg)
-            time.sleep(30)
-            rospy.Subscriber('/road_info', RoadInfo, callback_road_info)
+    r = rospy.Rate(10)
+    # rospy.Subscriber('/key_points', Bool, callback_stop_detection)
+    # if (stop_flag == 1):
+    #     # We've definitely been told to stop due to something.
+    #     msg.linear.x = 0
+    #     msg.angular.z = 0
+    # else:
+    #     # Otherwise, check whether we are at an intersection or not?
+    rospy.Subscriber('/road_info', RoadInfo, callback_road_info)
+    # if (intersection_flag == 1):
+    #     pub_intersection_detected = rospy.Publisher('intersection_detected', Twist, queue_size=1)
+    #     pub_intersection_detected.publish(msg)
+    #     time.sleep(30)
+    #     rospy.Subscriber('/road_info', RoadInfo, callback_road_info)
 
-    rospy.spin()
+    global pub
     pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
-    while not rospy.is_shutdown():
-        print("publishing")
-        pub.publish(msg)
-        r.sleep()
+    rospy.spin()
+
+    # global msg
+    # while not rospy.is_shutdown():
+    #     if msg is not None:
+    #         pub.publish(msg)
+    #         r.sleep()
 
 if __name__ == '__main__':
-    global msg
+    # global msg
     msg = Twist()
-    global r 
-    r = rospy.Rate(10)
+    # global r 
 
     try:
             main_ass2()
