@@ -32,7 +32,7 @@ def callback_road_info(data):
     global blocked
     global at_intersection
     global direction
-    global cycles_turned 
+    global cyclesTurned 
     # TODO: Perform a NOT color mask for the color of the lane markers
     #   before doing visual processing
     # OPTIONAL TODO: Perform a color mask for the color of the road
@@ -69,6 +69,7 @@ def callback_road_info(data):
             at_intersection = True
         else:
             at_intersection = False
+        turn = (road_info_data[0] - road_info_data[4]) / 60.0
         print("ATINT: ", at_intersection)
 
     if not moving and at_intersection:
@@ -106,8 +107,6 @@ def callback_road_info(data):
 
         # This is the turn value if we are not at an intersection
         # TODO: Keep turning even when both values are equal
-        turn = (road_info_data[0] - road_info_data[4]) / 60.0
-
         msg.linear.x = drive * MAX_SPEED
         msg.angular.z = turn * MAX_TURN
 
