@@ -7,111 +7,168 @@ import rospy
 from sensor_msgs.msg import CompressedImage
 from std_msgs.msg import Bool
 
-def applyMask(image):
+
+def configureParams(minThreshold=0,
+                    maxThreshold=255,
+                    filterByArea=True,
+                    minArea=0,
+                    maxArea=100000,
+                    filterByColor=True,
+                    blobColour=0,
+                    filterByCircularity=True,
+                    minCircularity=0,
+                    maxCircularity=1,
+                    filterByConvexity=True,
+                    minConvexity=0,
+                    maxConvexity=1,
+                    filterByInertia=True,
+                    minInertiaRatio=0,
+                    maxInertiaRatio=1):
     """
-    Detects regions of red and black and applies an inverted mask
-    """
-    # Convert from RGV to HSV
-    # image = cv2.imread(image, 1)  # Uncomment if opening a file path directly
-    img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-
-    # Apply lower and upper masks for RED
-    lower = cv2.inRange(img, (0, 50, 70), (10, 255, 255))
-    upper = cv2.inRange(img, (170, 50, 0), (180, 255, 255))
-    red = cv2.bitwise_or(lower, upper)
-
-    # Invert image to detect black blobs
-    mask = cv2.bitwise_not(red)
-
-    # Merge mask and original image
-    cropped = cv2.bitwise_and(img, img, mask=mask)
-
-    # Convert back to RGB
-    cropped = cv2.cvtColor(cropped, cv2.COLOR_HSV2BGR)
-
-    # # Display
-    # cv2.imshow("Black Mask", cropped)
-    # if cv2.waitKey(0) == ord('q'):
-    #     cv2.destroyAllWindows()
-
-    return cropped
-
-
-def detectBlob(image, pub):
-    """
-    Detect the blob
+    All parameters are true by default and detects black blobs by default.
     """
     # Create params checklist
     params = cv2.SimpleBlobDetector_Params()
 
     # Filters by threshold (how gray)
-    params.minThreshold = 1
-    params.maxThreshold = 114
+    params.minThreshold = minThreshold
+    params.maxThreshold = maxThreshold
 
     # Filters by area
-    params.filterByArea = True
-    params.minArea = 600
-    params.maxArea = 100000
+    params.filterByArea = filterByArea
+    params.minArea = minArea
+    params.maxArea = maxArea
 
     # Filters by colour (0 for black, 1 for white)
-    params.filterByColor = True
-    params.blobColor = 0
+    params.filterByColor = filterByColor
+    params.blobColor = blobColour
 
     # Filter by roundness
-    params.filterByCircularity = True
-    params.minCircularity = 0.05
-    params.maxCircularity = 1
+    params.filterByCircularity = filterByCircularity
+    params.minCircularity = minCircularity
+    params.maxCircularity = maxCircularity
 
     # Filter by convexity
-    params.filterByConvexity = True
-    params.minConvexity = 0.12
-    params.maxConvexity = 1
+    params.filterByConvexity = filterByConvexity
+    params.minConvexity = minConvexity
+    params.maxConvexity = maxConvexity
 
     # Filter by inertia (elongation)
-    params.filterByInertia = False
-    params.minInertiaRatio = 0
-    params.maxInertiaRatio = 1
+    params.filterByInertia = filterByInertia
+    params.minInertiaRatio = minInertiaRatio
+    params.maxInertiaRatio = maxInertiaRatio
+
+    return params
+
+
+def detectStopSign(image):
+    """
+    Returns a bool if stop signs represented as blobs of red is detected.
+    """
+    # Convert from RGV to HSV
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    # Apply lower and upper masks for RED
+    lower = cv2.inRange(image, (0, 50, 70), (10, 255, 255))
+    upper = cv2.inRange(image, (170, 50, 0), (180, 255, 255))
+    red = cv2.bitwise_or(lower, upper)
+
+    # Invert image to detect black blobs
+    mask = cv2.bitwise_not(red)
+
+    # Morphologically close the mask
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+
+    # Configure blob detection parameters
+    params = configureParams(minArea=600,
+                             minCircularity=0.05,
+                             maxCircularity=1,
+                             minConvexity=0.12,
+                             maxConvexity=1,
+                             filterByInertia=False)
 
     # Create blob detector
     detector = cv2.SimpleBlobDetector_create(params)
 
-    # Open image
-    image = np.fromstring(image.data, np.uint8)
-    image = cv2.imdecode(image, cv2.IMREAD_COLOR)  # decompress image
+    # Detect blobs in our image returned as keypoints
+    keypoints = detector.detect(mask)
 
-    # Detect colour regions
-    image = applyMask(image)
+    # Draw the keypoints on an image
+    # mask = cv2.drawKeypoints(mask, keypoints, np.array([]), (0, 0, 255),
+    #                          cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    # cv2.imshow("Stop Sign Blobbing", mask)
+    # if cv2.waitKey(0) == ord('q'):
+    #     cv2.destroyAllWindows()
 
-    # Morphologically close the image
-    kernel = np.ones((5,5),np.uint8)
-    image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
-    image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
+    # Check all keypoints for a valid keypoint to return stopped
+    stopped = False
+    for keypoint in keypoints:
+        if keypoint.size > 10 and keypoint.pt[1] < 200 and keypoint.pt[
+                0] < 550 and keypoint.pt[0] > 200:
+            print("Detected stop sign at (", keypoint.pt[0], ",",
+                  keypoint.pt[1], ")")
+            stopped = True
+            break
 
-    # Detect blobs in our frame returned as keypoints
+    return stopped
+
+
+def detectTurtlebot(image):
+    """
+    Returns a bool if a turtlebot represented as a large black blob is detected.
+    """
+    # Configure blob detection parameters
+    params = configureParams(minThreshold=1,
+                             maxThreshold=114,
+                             minArea=9000,
+                             filterByCircularity=False,
+                             filterByConvexity=False,
+                             minInertiaRatio=0,
+                             maxInertiaRatio=1)
+
+    # Create blob detector
+    detector = cv2.SimpleBlobDetector_create(params)
+
+    # Detect blobs in our image returned as keypoints
     keypoints = detector.detect(image)
 
     # Draw the keypoints on an image
     # image = cv2.drawKeypoints(image, keypoints, np.array([]), (0, 0, 255),
-    #                          cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    #                           cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     # cv2.imshow("Keypoints Image", image)
     # if cv2.waitKey(0) == ord('q'):
     #     cv2.destroyAllWindows()
 
-    # Stopped flag to publish is false
-    stopped = Bool()
-    stopped.data = False
-
-    # Check all keypoints if stop sign or turtlebot is in image
+    # Check all keypoints for a valid keypoint to return stopped
+    stopped = False
     for keypoint in keypoints:
-        
-        if keypoint.size > 0 and keypoint.pt[1] < 200 and keypoint.pt[0] < 550 and keypoint.pt[0] > 200:
+        if keypoint.size > 50 and keypoint.pt[1] < 200 and keypoint.pt[
+                0] < 550 and keypoint.pt[0] > 200:
+            print("Detected turtlebot at (", keypoint.pt[0], ",",
+                  keypoint.pt[1], ")")
             stopped = True
-            print("x: ", keypoint.pt[0], "y: ", keypoint.pt[1], "stop: ", stopped)
             break
+
+    return stopped
+
+
+def callback(image, pub):
+    """
+    Callback function to publish to key_points
+    """
+    # Open image
+    image = np.fromstring(image.data, np.uint8)
+    image = cv2.imdecode(image, cv2.IMREAD_COLOR)  # decompress image
+
+    # Detect stop sign or turtlebot
+    stopped = Bool()
+    stopped.data = detectTurtlebot(image) | detectStopSign(image)
 
     # Publish the topics
     pub.publish(stopped)
-    
+
 
 if __name__ == "__main__":
     ros_node_name = "colour_blob_detect"  # ros node name
@@ -120,20 +177,21 @@ if __name__ == "__main__":
 
     rospy.init_node(ros_node_name)
     pub = rospy.Publisher(pub_topic, Bool, queue_size=1)
-    rospy.Subscriber('/camera/rgb/image_raw/compressed', CompressedImage, detectBlob)
+    rospy.Subscriber('/camera/rgb/image_raw/compressed', CompressedImage,
+                     callback)
     sub = rospy.Subscriber(sub_topic,
                            CompressedImage,
-                           detectBlob, (pub),
+                           callback, (pub),
                            queue_size=1)
     rospy.spin()
 
-    # image = cv2.imread("lab.png", 1)
-    # detectBlob(image)
-    # image = cv2.imread("stop.png", 1)
-    # detectBlob(image)
-    # image = cv2.imread("stoplab.jpg", 1)
-    # detectBlob(image)
-    # image = cv2.imread("graph.png", 1)
-    # detectBlob(image)
-    # image = cv2.imread("roses.jpg", 1)
-    # detectBlob(image)
+    # image = cv2.imread("../../images/lab.png", 1)
+    # detectTurtlebot(image)
+    # image = cv2.imread("../../images/stop.png", 1)
+    # detectTurtlebot(image)
+    # image = cv2.imread("../../images/stoplab.jpg", 1)
+    # detectTurtlebot(image)
+    # image = cv2.imread("../../images/graph.png", 1)
+    # detectTurtlebot(image)
+    # image = cv2.imread("../../images/roses.jpg", 1)
+    # detectTurtlebot(image)
