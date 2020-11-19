@@ -65,6 +65,26 @@ def configureParams(minThreshold=0,
     return params
 
 
+def parseKeyPoints(keypoints, minSize=0, x=0, X=1444, y=0, Y=1444, debug=None):
+    """
+    Returns true if there exists a keypoint greater than minimum size and is inbetween
+    boundaries (x, X) and (y, Y).
+    """
+    for keypoint in keypoints:
+
+        if (keypoint.size > minSize and x < keypoint.pt[0]
+                and keypoint.pt[0] < X and y < keypoint.pt[1]
+                and keypoint.pt[1] < Y):
+
+            if (debug is not None):
+                print("Detected", debug, "at (", keypoint.pt[0], ",",
+                      keypoint.pt[1], ")")
+
+            return True
+
+    return False
+
+
 def detectStopSign(image):
     """
     Returns a bool if a stop sign is detected. Stop signs are masked as a binary image then
@@ -108,16 +128,7 @@ def detectStopSign(image):
     #     cv2.destroyAllWindows()
 
     # Check all keypoints for a valid keypoint to return stopped
-    stopped = False
-    for keypoint in keypoints:
-        if keypoint.size > 10 and keypoint.pt[1] < 200 and keypoint.pt[
-                0] < 550 and keypoint.pt[0] > 200:
-            print("Detected stop sign at (", keypoint.pt[0], ",",
-                  keypoint.pt[1], ")")
-            stopped = True
-            break
-
-    return stopped
+    return parseKeyPoints(keypoints, minSize=10, debug="stop sign")
 
 
 def detectTurtlebot(image):
@@ -142,21 +153,12 @@ def detectTurtlebot(image):
     # Draw the keypoints on an image
     # image = cv2.drawKeypoints(image, keypoints, np.array([]), (0, 0, 255),
     #                           cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    # cv2.imshow("Keypoints Image", image)
+    # cv2.imshow("Turtlebot Blobbing", image)
     # if cv2.waitKey(0) == ord('q'):
     #     cv2.destroyAllWindows()
 
     # Check all keypoints for a valid keypoint to return stopped
-    stopped = False
-    for keypoint in keypoints:
-        if keypoint.size > 50 and keypoint.pt[1] < 200 and keypoint.pt[
-                0] < 550 and keypoint.pt[0] > 200:
-            print("Detected turtlebot at (", keypoint.pt[0], ",",
-                  keypoint.pt[1], ")")
-            stopped = True
-            break
-
-    return stopped
+    return parseKeyPoints(keypoints, minSize=50, y=200, debug="turtlebot")
 
 
 def callback(image, pub):
@@ -191,12 +193,12 @@ if __name__ == "__main__":
     rospy.spin()
 
     # image = cv2.imread("../../images/lab.png", 1)
-    # detectTurtlebot(image)
+    # detectStopSign(image)
     # image = cv2.imread("../../images/stop.png", 1)
-    # detectTurtlebot(image)
+    # detectStopSign(image)
     # image = cv2.imread("../../images/stoplab.jpg", 1)
-    # detectTurtlebot(image)
+    # detectStopSign(image)
     # image = cv2.imread("../../images/graph.png", 1)
-    # detectTurtlebot(image)
+    # detectStopSign(image)
     # image = cv2.imread("../../images/roses.jpg", 1)
-    # detectTurtlebot(image)
+    # detectStopSign(image)
