@@ -1,3 +1,7 @@
+"""
+blob.py handles detections of stop signs and turtlebots using OpenCV's SimpleBlobDetector.
+"""
+
 #!/usr/bin/env python2
 
 import cv2
@@ -63,7 +67,8 @@ def configureParams(minThreshold=0,
 
 def detectStopSign(image):
     """
-    Returns a bool if stop signs represented as blobs of red is detected.
+    Returns a bool if a stop sign is detected. Stop signs are masked as a binary image then
+    passed to simple blob detector.
     """
     # Convert from RGV to HSV
     image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
