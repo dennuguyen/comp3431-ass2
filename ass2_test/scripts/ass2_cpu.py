@@ -10,12 +10,12 @@ from enum import Enum
 MAX_SPEED = 0.26
 MAX_TURN = 1.0
 
-TURN_ANGVEL = 0.5
-TURN_LINVEL = 0.1
-TURN_TOTAL_CYCLES = 90
+TURN_ANGVEL = 0.13
+TURN_LINVEL = 0.17
+TURN_TOTAL_CYCLES = 180
 
 at_intersection = False
-cycles_turned = 0
+cyclesTurned = 0
 class Direction(Enum):
     LEFT = 1
     FORWARD = 2
@@ -70,7 +70,7 @@ def callback_road_info(data):
         else:
             at_intersection = False
         turn = (road_info_data[0] - road_info_data[4]) / 60.0
-        print("ATINT: ", at_intersection)
+        #print("ATINT: ", at_intersection)
 
     if not moving and at_intersection:
         #Not sure about the values
@@ -81,10 +81,15 @@ def callback_road_info(data):
         else:
             direction = Direction.LEFT
         moving = True
-        print("MOVING is true")
+        print("PICKING DIRECTION")
 
     global msg
     if moving and not blocked:
+	# TODO: Intersection handler goes here
+        #   Keep logic simple. i.e., move forward for x seconds to clear
+        #   the line if no stop sign is detected
+	print("TURNING")
+
         if direction == Direction.FORWARD:
             msg.linear.x = TURN_LINVEL
             msg.angular.z = 0
@@ -100,11 +105,7 @@ def callback_road_info(data):
             moving = False
             cyclesTurned = 0
     else:
-        print("Definitely in here!")
-        # TODO: Intersection handler goes here
-        #   Keep logic simple. i.e., move forward for x seconds to clear
-        #   the line if no stop sign is detected
-
+        #print("Definitely in here!")
         # This is the turn value if we are not at an intersection
         # TODO: Keep turning even when both values are equal
         msg.linear.x = drive * MAX_SPEED
