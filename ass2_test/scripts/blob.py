@@ -85,6 +85,17 @@ def parseKeyPoints(keypoints, minSize=0, x=0, X=1444, y=0, Y=1444, debug=None):
     return False
 
 
+def displayKeypoints(image, keypoints):
+    """
+    Display keypoints on the image
+    """
+    image = cv2.drawKeypoints(image, keypoints, np.array([]), (0, 0, 255),
+                              cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    cv2.imshow("Keypoints", image)
+    if cv2.waitKey(0) == ord('q'):
+        cv2.destroyAllWindows()
+
+
 def detectStopSign(image):
     """
     Returns a bool if a stop sign is detected. Stop signs are masked as a binary image then
@@ -103,8 +114,8 @@ def detectStopSign(image):
 
     # Morphologically close the mask
     kernel = np.ones((5, 5), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
     # Configure blob detection parameters
     params = configureParams(minArea=600,
@@ -121,11 +132,7 @@ def detectStopSign(image):
     keypoints = detector.detect(mask)
 
     # Draw the keypoints on an image
-    # mask = cv2.drawKeypoints(mask, keypoints, np.array([]), (0, 0, 255),
-    #                          cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    # cv2.imshow("Stop Sign Blobbing", mask)
-    # if cv2.waitKey(0) == ord('q'):
-    #     cv2.destroyAllWindows()
+    # displayKeypoints(mask, keypoints)
 
     # Check all keypoints for a valid keypoint to return stopped
     return parseKeyPoints(keypoints, minSize=10, debug="stop sign")
@@ -135,10 +142,19 @@ def detectTurtlebot(image):
     """
     Returns a bool if a turtlebot represented as a large black blob is detected.
     """
+    # Apply mask for BLACK
+    black = cv2.inRange(image, (0, 0, 0), (15, 50, 100))
+
+    # Invert image to detect black blobs
+    mask = cv2.bitwise_not(black)
+
+    # Morphologically close the mask
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+
     # Configure blob detection parameters
-    params = configureParams(minThreshold=1,
-                             maxThreshold=114,
-                             minArea=9000,
+    params = configureParams(minArea=9000,
                              filterByCircularity=False,
                              filterByConvexity=False,
                              minInertiaRatio=0,
@@ -148,14 +164,10 @@ def detectTurtlebot(image):
     detector = cv2.SimpleBlobDetector_create(params)
 
     # Detect blobs in our image returned as keypoints
-    keypoints = detector.detect(image)
+    keypoints = detector.detect(mask)
 
     # Draw the keypoints on an image
-    # image = cv2.drawKeypoints(image, keypoints, np.array([]), (0, 0, 255),
-    #                           cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    # cv2.imshow("Turtlebot Blobbing", image)
-    # if cv2.waitKey(0) == ord('q'):
-    #     cv2.destroyAllWindows()
+    # displayKeypoints(mask, keypoints)
 
     # Check all keypoints for a valid keypoint to return stopped
     return parseKeyPoints(keypoints, minSize=50, y=200, debug="turtlebot")
@@ -193,12 +205,17 @@ if __name__ == "__main__":
     rospy.spin()
 
     # image = cv2.imread("../../images/lab.png", 1)
+    # cv2.imshow("Image", image)
     # detectStopSign(image)
     # image = cv2.imread("../../images/stop.png", 1)
+    # cv2.imshow("Image", image)
     # detectStopSign(image)
     # image = cv2.imread("../../images/stoplab.jpg", 1)
+    # cv2.imshow("Image", image)
     # detectStopSign(image)
     # image = cv2.imread("../../images/graph.png", 1)
+    # cv2.imshow("Image", image)
     # detectStopSign(image)
     # image = cv2.imread("../../images/roses.jpg", 1)
+    # cv2.imshow("Image", image)
     # detectStopSign(image)
