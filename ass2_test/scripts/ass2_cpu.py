@@ -10,106 +10,130 @@ from enum import Enum
 MAX_SPEED = 0.26
 MAX_TURN = 1.0
 
-TURN_ANGVEL = 0.13
-TURN_LINVEL = 0.17
-TURN_TOTAL_CYCLES = 180
+TURN_ANGVEL = 0.20
+TURN_LINVEL = 0.20
+TURN_TOTAL_CYCLES = 130
+FORWARD_TOTAL_CYCLES = 30
 
-at_intersection = False
-cyclesTurned = 0
 class Direction(Enum):
     LEFT = 1
     FORWARD = 2
     RIGHT = 3
 
+at_intersection = False
+cycles_turned = 0
+cycles_forward = 0
 msg = None
 pub = None
 moving = False
 blocked = False
 direction = Direction.FORWARD
+direction_picked = False
 
 def callback_road_info(data):
     global moving
     global blocked
     global at_intersection
     global direction
-    global cyclesTurned 
-    # TODO: Perform a NOT color mask for the color of the lane markers
-    #   before doing visual processing
-    # OPTIONAL TODO: Perform a color mask for the color of the road
-    #   before doing visual processing
-    # OPTIONAL TODO: Experiment with mapping the lane mask to a birds-
-    #   eye-view
-    # OPTIONAL TODO: Experiment with publishing the lane mask as a map
-    #   viewable in RViz
-    road_info_data = data.data
-
-    turn = 0.0
-    drive = 0.0
-
-    # Turning must scale positively with higher [0] and negatively
-    # with higher [1].
-    # TODO: Come up with a way to select a "midpoint" between the two
-    #   values that isn't necessarily (0, 0)
-    turn = (road_info_data[0] / 180.0) - (road_info_data[1] / 240.0)
-
-    # Forward movement speed scales with how much road we have left
-    # TODO: Parametrize these scaling factors
-    drive = max(0, (road_info_data[2] - 10.0) / 240.0)
-
-    # Slow down in cases where we need to make large turns
-    drive *= max(0, 1 - abs(turn))
-
-    # Check if we are close to something in front of us
-    if road_info_data[2] < 35:
-        # TODO: Experiment with checking how many pixels are part of the
-        #   lane and using that as a metric for how much road there is left
-
-        # TODO: If these values are equal, we are probably at an intersection
-        if abs(road_info_data[0] - road_info_data[4]) < 5:
-            at_intersection = True
-        else:
-            at_intersection = False
-        turn = (road_info_data[0] - road_info_data[4]) / 60.0
-        #print("ATINT: ", at_intersection)
-
-    if not moving and at_intersection:
-        #Not sure about the values
-        #Not sure how to pick where to turn
-        #Forward on long gap, left otherwise will manually complete the map
-        if road_info_data[2] > 80:
-            direction = Direction.FORWARD
-        else:
-            direction = Direction.LEFT
-        moving = True
-        print("PICKING DIRECTION")
-
+    global cycles_turned 
+    global cycles_forward
     global msg
-    if moving and not blocked:
-	# TODO: Intersection handler goes here
-        #   Keep logic simple. i.e., move forward for x seconds to clear
-        #   the line if no stop sign is detected
-	print("TURNING")
+    global direction_picked
 
-        if direction == Direction.FORWARD:
-            msg.linear.x = TURN_LINVEL
-            msg.angular.z = 0
-        elif direction == Direction.LEFT:
-            msg.linear.x = TURN_LINVEL
-            msg.angular.z = -TURN_ANGVEL
-        elif direction == Direction.RIGHT:
-            msg.linear.x = TURN_LINVEL
-            msg.angular.z = -TURN_ANGVEL
+    if not blocked:
+        # TODO: Perform a NOT color mask for the color of the lane markers
+        #   before doing visual processing
+        # OPTIONAL TODO: Perform a color mask for the color of the road
+        #   before doing visual processing
+        # OPTIONAL TODO: Experiment with mapping the lane mask to a birds-
+        #   eye-view
+        # OPTIONAL TODO: Experiment with publishing the lane mask as a map
+        #   viewable in RViz
+        road_info_data = data.data
 
-        cyclesTurned += 1
-        if cyclesTurned >= TURN_TOTAL_CYCLES:
-            moving = False
-            cyclesTurned = 0
+        turn = 0.0
+        drive = 0.0
+
+        # Turning must scale positively with higher [0] and negatively
+        # with higher [1].
+        # TODO: Come up with a way to select a "midpoint" between the two
+        #   values that isn't necessarily (0, 0)
+        turn = (road_info_data[0] / 180.0) - (road_info_data[1] / 240.0)
+
+        # Forward movement speed scales with how much road we have left
+        # TODO: Parametrize these scaling factors
+        drive = max(0, (road_info_data[2] - 10.0) / 240.0)
+
+        # Slow down in cases where we need to make large turns
+        drive *= max(0, 1 - abs(turn))
+
+        # Check if we are close to something in front of us
+        if road_info_data[2] < 35:
+            # TODO: Experiment with checking how many pixels are part of the
+            #   lane and using that as a metric for how much road there is left
+
+            # TODO: If these values are equal, we are probably at an intersection
+            if abs(road_info_data[0] - road_info_data[4]) < 5:
+                at_intersection = True
+            else:
+                at_intersection = False
+            turn = (road_info_data[0] - road_info_data[4]) / 60.0
+            print("ATINT: ", at_intersection)
+
+        if at_intersection and cycles_forward == 0:
+            print("CROSSING INTERSECTION")	
+            direction = Direction.FORWARD
+            moving = True
+
+        if moving and cycles_forward == FORWARD_TOTAL_CYCLES and not direction_picked:
+            #Not sure about the values
+            #Not sure how to pick where to turn
+            #Forward on long gap, left otherwise will manually complete the map
+            if sum(road_info_data)/len(road_info_data) > 80:
+                direction = Direction.FORWARD
+                cycles_turned = TURN_TOTAL_CYCLES - 20
+            else:
+                direction = Direction.LEFT
+            print("PICKING DIRECTION: " + str(direction))
+            direction_picked = True
+
+        if moving:
+            # TODO: Intersection handler goes here
+            #   Keep logic simple. i.e., move forward for x seconds to clear
+            #   the line if no stop sign is detected
+            #print("MOVING")
+            if cycles_forward != FORWARD_TOTAL_CYCLES:
+                msg.linear.x = TURN_LINVEL
+                msg.angular.z = 0
+                cycles_forward += 1
+                print("FORWARD " + str(cycles_forward))
+            else:
+                if direction == Direction.FORWARD:
+                    msg.linear.x = TURN_LINVEL
+                    msg.angular.z = 0
+                elif direction == Direction.LEFT:
+                    msg.linear.x = TURN_LINVEL
+                    msg.angular.z = -TURN_ANGVEL
+                elif direction == Direction.RIGHT:
+                    msg.linear.x = TURN_LINVEL
+                    msg.angular.z = -TURN_ANGVEL
+
+                cycles_turned += 1
+                if cycles_turned >= TURN_TOTAL_CYCLES:
+                    moving = False
+                    direction_picked = False
+                    cycles_turned = 0
+                    cycles_forward = 0
+                    at_intersection = False
+        else:
+            #print("Definitely in here!")
+            # This is the turn value if we are not at an intersection
+            # TODO: Keep turning even when both values are equal
+            msg.linear.x = drive * MAX_SPEED
+            msg.angular.z = turn * MAX_TURN
     else:
-        #print("Definitely in here!")
-        # This is the turn value if we are not at an intersection
-        # TODO: Keep turning even when both values are equal
-        msg.linear.x = drive * MAX_SPEED
-        msg.angular.z = turn * MAX_TURN
+        msg.linear.x = 0
+        msg.angular.z = 0
 
     global pub
     pub.publish(msg)
