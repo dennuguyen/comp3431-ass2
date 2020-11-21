@@ -112,7 +112,7 @@ def detectStopSign(image):
     # Invert image to detect black blobs
     mask = cv2.bitwise_not(red)
 
-    # Morphologically close the mask
+    # Fill holes
     kernel = np.ones((5, 5), np.uint8)
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
@@ -148,10 +148,13 @@ def detectTurtlebot(image):
     # Invert image to detect black blobs
     mask = cv2.bitwise_not(black)
 
-    # Morphologically close the mask
-    kernel = np.ones((5, 5), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    # Fill holes
+    _, thresh = cv2.threshold(mask, 0, 1, cv2.THRESH_BINARY)
+    flood = thresh.copy()
+    h, w = thresh.shape[:2]
+    mask = np.zeros((h + 2, w + 2), np.uint8)
+    cv2.floodFill(flood, mask, (0, 0), 255)
+    mask = thresh | flood
 
     # Configure blob detection parameters
     params = configureParams(minArea=9000,
@@ -206,16 +209,16 @@ if __name__ == "__main__":
 
     # image = cv2.imread("../../images/lab.png", 1)
     # cv2.imshow("Image", image)
-    # detectStopSign(image)
+    # detectTurtlebot(image)
     # image = cv2.imread("../../images/stop.png", 1)
     # cv2.imshow("Image", image)
-    # detectStopSign(image)
+    # detectTurtlebot(image)
     # image = cv2.imread("../../images/stoplab.jpg", 1)
     # cv2.imshow("Image", image)
-    # detectStopSign(image)
+    # detectTurtlebot(image)
     # image = cv2.imread("../../images/graph.png", 1)
     # cv2.imshow("Image", image)
-    # detectStopSign(image)
+    # detectTurtlebot(image)
     # image = cv2.imread("../../images/roses.jpg", 1)
     # cv2.imshow("Image", image)
-    # detectStopSign(image)
+    # detectTurtlebot(image)
