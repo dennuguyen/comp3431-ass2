@@ -40,7 +40,8 @@ def callback_road_info(data):
     global msg
     global direction_picked
 
-    if not blocked:
+    # if not blocked:
+    if True:
         # TODO: Perform a NOT color mask for the color of the lane markers
         #   before doing visual processing
         # OPTIONAL TODO: Perform a color mask for the color of the road
@@ -73,10 +74,10 @@ def callback_road_info(data):
             #   lane and using that as a metric for how much road there is left
 
             # TODO: If these values are equal, we are probably at an intersection
-            if abs(road_info_data[0] - road_info_data[4]) < 5:
-                at_intersection = True
-            else:
-                at_intersection = False
+            # if abs(road_info_data[0] - road_info_data[4]) < 5:
+            #     at_intersection = True
+            # else:
+            #     at_intersection = False
             turn = (road_info_data[0] - road_info_data[4]) / 60.0
             print("ATINT: ", at_intersection)
 
@@ -136,6 +137,13 @@ def callback_road_info(data):
         msg.angular.z = 0
 
     global pub
+    pub.publish(msg)
+
+    r = rospy.Rate(1)
+    r.sleep()
+
+    msg.linear.x = 0
+    msg.angular.z = 0
     pub.publish(msg)
 
 def callback_stop_detection(data):

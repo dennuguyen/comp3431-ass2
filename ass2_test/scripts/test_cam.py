@@ -156,8 +156,8 @@ def rpi_callback(data):
 
     
 def main():
-    # rospy.Subscriber('/raspicam_node/image/compressed', CompressedImage, rpi_callback)
-    rospy.Subscriber('/camera/rgb/image_raw/compressed', CompressedImage, rpi_callback)
+    rospy.Subscriber('/raspicam_node/image/compressed', CompressedImage, rpi_callback)
+    # rospy.Subscriber('/camera/rgb/image_raw/compressed', CompressedImage, rpi_callback)
 
     global road_info
     road_info = rospy.Publisher('/road_info', RoadInfo, queue_size=1)

@@ -1,8 +1,4 @@
-"""
-blob.py handles detections of stop signs and turtlebots using OpenCV's SimpleBlobDetector.
-"""
-
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 import cv2
 import numpy as np
@@ -11,6 +7,9 @@ import rospy
 from sensor_msgs.msg import CompressedImage
 from std_msgs.msg import Bool
 
+"""
+blob.py handles detections of stop signs and turtlebots using OpenCV's SimpleBlobDetector.
+"""
 
 def configureParams(minThreshold=0,
                     maxThreshold=255,
@@ -196,6 +195,7 @@ if __name__ == "__main__":
     ros_node_name = "colour_blob_detect"  # ros node name
     pub_topic = "key_points"  # topic to publish to
     sub_topic = "raspicam_node/image/compressed"  # topic to subscribe to
+    # sub_topic = "/camera/rgb/image_raw/compressed"  # topic to subscribe to
 
     rospy.init_node(ros_node_name)
     pub = rospy.Publisher(pub_topic, Bool, queue_size=1)
