@@ -139,12 +139,12 @@ def callback_road_info(data):
     global pub
     pub.publish(msg)
 
-    r = rospy.Rate(1)
-    r.sleep()
+    #r = rospy.Rate(1)
+    #r.sleep()
 
-    msg.linear.x = 0
-    msg.angular.z = 0
-    pub.publish(msg)
+    #msg.linear.x = 0
+    #msg.angular.z = 0
+    #pub.publish(msg)
 
 def callback_stop_detection(data):
     # Five number array

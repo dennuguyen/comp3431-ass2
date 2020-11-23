@@ -5,7 +5,7 @@ import numpy as np
 import rospy
 
 from ass2_test.msg import RoadInfo
-from scipy import stats
+# from scipy import stats
 from sensor_msgs.msg import CompressedImage
 from geometry_msgs.msg import Twist
 
@@ -69,7 +69,8 @@ def rpi_callback(data):
     # Assign an integer to all connected blobs. The blob with the most pixels
     # at the bottom of the image is considered the lane
     _, dst = cv.connectedComponents(dst)
-    road_id = stats.mode(dst[479])[0][0]
+    road_id = dst[479, 320]
+    # road_id = stats.mode(dst[479])[0][0]
 
     dst = (dst == road_id).astype(np.uint8) * 255
 
