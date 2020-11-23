@@ -58,124 +58,115 @@ def callback_road_info(data):
 
         # Check if we are close to something in front of us
         if road_info_data[2] < 35:
+
+            # If turn value is very low, we are at an intersection
             if abs(road_info_data[0] - road_info_data[4]) < 5:
                 at_intersection = True
             else:
                 at_intersection = False
+
             turn = (road_info_data[0] - road_info_data[4]) / 60.0
+
             print("ATINT: ", at_intersection)
 
+        # If we've just arrived at an intersection, set direction forward
+        # and state that we're moving through an intersection
         if at_intersection and cycles_forward == 0:
             print("CROSSING INTERSECTION")	
             direction = Direction.FORWARD
             moving = True
 
+        # If we've already moved forward for the specified number of cycles
+        # and haven't picked a direction to turn yet
         if moving and cycles_forward == FORWARD_TOTAL_CYCLES and not direction_picked:
-            #Not sure about the values
-            #Not sure how to pick where to turn
-            #Forward on long gap, left otherwise will manually complete the map
+            # ???
             if sum(road_info_data)/len(road_info_data) > 80:
                 direction = Direction.FORWARD
                 cycles_turned = TURN_TOTAL_CYCLES - 20
+            
+            # Default to turning left
             else:
                 direction = Direction.LEFT
             print("PICKING DIRECTION: " + str(direction))
             direction_picked = True
 
+        # If we're moving through an intersection
         if moving:
-            #print("MOVING")
+
+            # If we haven't gone forward for the specified number of cycles yet
             if cycles_forward != FORWARD_TOTAL_CYCLES:
+
+                # Move forward
                 msg.linear.x = TURN_LINVEL
                 msg.angular.z = 0
                 cycles_forward += 1
                 print("FORWARD " + str(cycles_forward))
+
+            # If we've already gone forward for the specified number of cycles
             else:
+
+                # Set the turning direction accordingly
                 if direction == Direction.FORWARD:
                     msg.linear.x = TURN_LINVEL
                     msg.angular.z = 0
+
                 elif direction == Direction.LEFT:
                     msg.linear.x = TURN_LINVEL
                     msg.angular.z = -TURN_ANGVEL
+
                 elif direction == Direction.RIGHT:
                     msg.linear.x = TURN_LINVEL
                     msg.angular.z = -TURN_ANGVEL
 
                 cycles_turned += 1
+
+                # If we've already turned for the specified number of cycles
                 if cycles_turned >= TURN_TOTAL_CYCLES:
+
+                    # Reset all intersection handling state variables
                     moving = False
                     direction_picked = False
                     cycles_turned = 0
                     cycles_forward = 0
                     at_intersection = False
+
         else:
-            #print("Definitely in here!")
             # This is the turn value if we are not at an intersection
             msg.linear.x = drive * MAX_SPEED
             msg.angular.z = turn * MAX_TURN
+
+    # Stop if we're in a blocked state
     else:
         msg.linear.x = 0
         msg.angular.z = 0
 
+    # Publish the message
     global pub
     pub.publish(msg)
 
-    #r = rospy.Rate(1)
-    #r.sleep()
-
-    #msg.linear.x = 0
-    #msg.angular.z = 0
-    #pub.publish(msg)
 
 def callback_stop_detection(data):
-    # Five number array
     global blocked
     blocked = data.data
 
-# def callback_intersection_vel(data):
-#     # Five number array
-#     road_info_data = data.data
-#     global msg
-#     global intersection_vel
-#     global direction
-#     global moving
-#     global blocked
-#     global cyclesTurned
-#
-#     newMsg = Twist()
-#
 
 def main_ass2():
     rospy.init_node("ass2_cpu", anonymous=True)
+
+    # Sleep to allow simulator to load positions
     r = rospy.Rate(10)
     rospy.sleep(5)
+
     rospy.Subscriber('/key_points', Bool, callback_stop_detection)
-    # if (stop_flag == 1):
-    #     # We've definitely been told to stop due to something.
-    #     msg.linear.x = 0
-    #     msg.angular.z = 0
-    # else:
-    #     # Otherwise, check whether we are at an intersection or not?
     rospy.Subscriber('/road_info', RoadInfo, callback_road_info)
-    # if (intersection_flag == 1):
-    #     pub_intersection_detected = rospy.Publisher('intersection_detected', Twist, queue_size=1)
-    #     pub_intersection_detected.publish(msg)
-    #     time.sleep(30)
-    #     rospy.Subscriber('/road_info', RoadInfo, callback_road_info)
 
     global pub
     pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
     rospy.spin()
 
-    # global msg
-    # while not rospy.is_shutdown():
-    #     if msg is not None:
-    #         pub.publish(msg)
-    #         r.sleep()
 
 if __name__ == '__main__':
-    # global msg
     msg = Twist()
-    # global r
 
     try:
             main_ass2()
