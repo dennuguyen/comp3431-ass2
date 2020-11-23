@@ -135,7 +135,7 @@ def detectStopSign(image):
     # displayKeypoints(mask, keypoints)
 
     # Check all keypoints for a valid keypoint to return stopped
-    return parseKeyPoints(keypoints, minSize=10, debug="stop sign")
+    return parseKeyPoints(keypoints, minSize=10, x=213, X=426, y=200, debug="stop sign")
 
 
 def detectTurtlebot(image):
@@ -173,7 +173,7 @@ def detectTurtlebot(image):
     # displayKeypoints(mask, keypoints)
 
     # Check all keypoints for a valid keypoint to return stopped
-    return parseKeyPoints(keypoints, minSize=50, y=200, debug="turtlebot")
+    return parseKeyPoints(keypoints, minSize=50, x=213, X=426, y=200, debug="turtlebot")
 
 
 def callback(image, pub):
@@ -199,8 +199,6 @@ if __name__ == "__main__":
 
     rospy.init_node(ros_node_name)
     pub = rospy.Publisher(pub_topic, Bool, queue_size=1)
-    rospy.Subscriber('/camera/rgb/image_raw/compressed', CompressedImage,
-                     callback)
     sub = rospy.Subscriber(sub_topic,
                            CompressedImage,
                            callback, (pub),
