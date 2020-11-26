@@ -11,12 +11,6 @@ https://docs.opencv.org/master/dc/dc3/tutorial_py_matcher.html
 
 <br />
 
-## Colour Blob Detection
-
-Node: "colour_blob_detect"\
-Publishes\<PoseArray>: "key_points"\
-Subscribes\<CompressedImage>: "raspicam_node/image/compressed"
-
 ## "Wall Follow" example
 
 Run `roslaunch ass2_test test.launch`
