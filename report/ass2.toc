@@ -1,0 +1,14 @@
+\contentsline {section}{\numberline {1}Introduction}{1}{section.1}
+\contentsline {section}{\numberline {2}Environment}{1}{section.2}
+\contentsline {section}{\numberline {3}Robotic Software Architecture}{2}{section.3}
+\contentsline {subsection}{\numberline {3.1}Lane Detection}{3}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Blob Detection}{4}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}State Machine Representation}{4}{subsection.3.3}
+\contentsline {section}{\numberline {4}Evaluation}{5}{section.4}
+\contentsline {section}{\numberline {5}Personal Contribution}{5}{section.5}
+\contentsline {section}{\numberline {6}Conclusion}{6}{section.6}
+\contentsline {section}{Appendices}{7}{section*.9}
+\contentsline {section}{\numberline {A}Turtlebot Detection Pseudocode}{7}{Appendix.a.A}
+\contentsline {section}{\numberline {B}Stop Sign Detection Pseudocode}{7}{Appendix.a.B}
+\contentsline {section}{\numberline {C}Turtlebot Detection Test Results}{8}{Appendix.a.C}
+\contentsline {section}{\numberline {D}Stop Sign Detection Test Results}{9}{Appendix.a.D}
